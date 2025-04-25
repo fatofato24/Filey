@@ -1,129 +1,117 @@
 import os
 import pickle
+from datetime import datetime
+
+DATA_FILE = "filesystem.pkl"
 
 class FileObject:
     def __init__(self, name, content=""):
         self.name = name
         self.content = content
-        self.open = False
+        self.created_at = datetime.now()
 
     def write_to_file(self, text):
         self.content += text
 
     def write_at(self, index, text):
+        index = int(index)
         if index < len(self.content):
-            self.content = self.content[:index] + text + self.content[index + len(text):]
+            self.content = self.content[:index] + text + self.content[index:]
         else:
             self.content += " " * (index - len(self.content)) + text
 
     def read_from_file(self):
         return self.content
 
-    def read_from(self, start, size):
-        return self.content[start:start + size]
-
     def move_within_file(self, start, size, target):
-        data = self.content[start:start + size]
+        start, size, target = int(start), int(size), int(target)
+        snippet = self.content[start:start + size]
         self.content = self.content[:start] + self.content[start + size:]
-        self.content = self.content[:target] + data + self.content[target:]
+        self.content = self.content[:target] + snippet + self.content[target:]
 
-    def truncate_file(self, size):
-        self.content = self.content[:size]
+    def truncate(self, start, end):
+        start, end = int(start), int(end)
+        self.content = self.content[:start] + self.content[end:]
+
+    def get_details(self):
+        return f"Name: {self.name}\nCreated: {self.created_at}\nSize: {len(self.content)} bytes"
 
 class FileSystem:
     def __init__(self):
-        self.structure = {'/': {}}  # root directory
-        self.current_path = '/'
-        self.files = {}
+        self.files = {}  # name: FileObject
         self.load_data()
 
     def save_data(self):
-        with open("filesystem.dat", "wb") as f:
-            pickle.dump((self.structure, self.current_path, self.files), f)
+        with open(DATA_FILE, "wb") as f:
+            pickle.dump(self.files, f)
 
     def load_data(self):
-        if os.path.exists("filesystem.dat"):
-            with open("filesystem.dat", "rb") as f:
-                self.structure, self.current_path, self.files = pickle.load(f)
-    def create(self, file_name):
-        if file_name in self.files:
-            print(f"File '{file_name}' already exists.")
-            return
-        self.files[file_name] = FileObject(file_name)
-        self.structure[self.current_path][file_name] = 'file'
+        if os.path.exists(DATA_FILE):
+            with open(DATA_FILE, "rb") as f:
+                self.files = pickle.load(f)
+
+    def create(self, name):
+        if name in self.files:
+            return "File already exists"
+        self.files[name] = FileObject(name)
         self.save_data()
-        print(f"File '{file_name}' created.")
+        return "File created"
 
-    def delete(self, file_name):
-        if file_name not in self.files:
-            print(f"File '{file_name}' does not exist.")
-            return
-        del self.files[file_name]
-        if file_name in self.structure[self.current_path]:
-            del self.structure[self.current_path][file_name]
-        self.save_data()
-        print(f"File '{file_name}' deleted.")
+    def mkdir(self, name):
+        return self.create(name)  # No actual directory structure yet
 
-    def mkdir(self, dir_name):
-        if dir_name in self.structure[self.current_path]:
-            print(f"Directory '{dir_name}' already exists.")
-            return
-        path = os.path.join(self.current_path, dir_name)
-        self.structure[path] = {}
-        self.structure[self.current_path][dir_name] = 'dir'
-        self.save_data()
-        print(f"Directory '{dir_name}' created.")
+    def delete(self, name):
+        if name in self.files:
+            del self.files[name]
+            self.save_data()
+            return "Deleted"
+        return "File not found"
 
-    def chdir(self, dir_name):
-        if dir_name == "..":
-            if self.current_path != "/":
-                self.current_path = os.path.dirname(self.current_path.rstrip("/"))
-                if self.current_path == "":
-                    self.current_path = "/"
-        else:
-            path = os.path.join(self.current_path, dir_name)
-            if path not in self.structure:
-                print(f"Directory '{dir_name}' does not exist.")
-                return
-            self.current_path = path
-        print(f"Changed directory to: {self.current_path}")
-        self.save_data()
-        
-    def move(self, source, target):
-        # Check if source exists
-        if source not in self.structure[self.current_path]:
-            print(f"File '{source}' not found in current directory.")
-            return
+    def move(self, old, new):
+        if old in self.files:
+            self.files[new] = self.files.pop(old)
+            self.files[new].name = new
+            self.save_data()
+            return "Moved/Renamed"
+        return "File not found"
 
-        # Update structure only (we don't touch file content)
-        self.structure[self.current_path][target] = self.structure[self.current_path].pop(source)
-        self.files[target] = self.files.pop(source)
-        self.files[target].name = target
-        self.save_data()
-        print(f"File renamed from '{source}' to '{target}'.")
+    def write_at(self, name, index, text):
+        if name in self.files:
+            self.files[name].write_at(int(index), text)
+            self.save_data()
+            return "Written at position"
+        return "File not found"
 
-    def open(self, file_name, mode='r'):
-        if file_name not in self.files:
-            print(f"File '{file_name}' does not exist.")
-            return None
-        file_obj = self.files[file_name]
-        file_obj.open = True
-        print(f"File '{file_name}' opened in mode '{mode}'.")
-        return file_obj
+    def append(self, name, text):
+        if name in self.files:
+            self.files[name].write_to_file(text)
+            self.save_data()
+            return "Appended"
+        return "File not found"
 
-    def close(self, file_name):
-        if file_name not in self.files:
-            print(f"File '{file_name}' does not exist.")
-            return
-        self.files[file_name].open = False
-        self.save_data()
-        print(f"File '{file_name}' closed.")
+    def details(self, name):
+        if name in self.files:
+            return self.files[name].get_details()
+        return "File not found"
 
-    def show_memory_map(self):
-        print("\n📦 MEMORY MAP:")
-        for file_name, file_obj in self.files.items():
-            size = len(file_obj.content)
-            print(f"{file_name} → Size: {size} chars, Open: {file_obj.open}")
-        print()
+    def move_within_file(self, name, start, target, size):
+        if name in self.files:
+            self.files[name].move_within_file(start, size, target)
+            self.save_data()
+            return "Moved text within file"
+        return "File not found"
 
-        
+    def truncate(self, name, start, end):
+        if name in self.files:
+            self.files[name].truncate(start, end)
+            self.save_data()
+            return "Truncated file"
+        return "File not found"
+
+    def read(self, name):
+        if name in self.files:
+            return self.files[name].read_from_file()
+        return "File not found"
+
+    def list_files(self):
+        return "\n".join(self.files.keys())

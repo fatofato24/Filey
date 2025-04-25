@@ -1,0 +1,23 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "App",
+            "request": "launch",
+            "mainClass": "App",
+            "vmArgs": "--module-path \"C:/Users/New Guest/Documents/javafx-sdk-21.0.7/lib\" --add-modules javafx.controls,javafx.fxml",
+            "projectName": "Filey_c637601e"
+        },
+        {
+            "type": "java",
+            "name": "JavaFX Application",
+            "request": "launch",
+            "mainClass": "FileManagementApp",
+            "vmArgs": "--module-path \"C:/Users/New Guest/Documents/javafx-sdk-21.0.7/lib\" --add-modules javafx.controls,javafx.fxml",
+            "projectName": "YourProjectName",
+            "args": []
+        }
+    ]
+  }
+  

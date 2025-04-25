@@ -1,0 +1,18 @@
+{
+  
+    "java.project.referencedLibraries": [
+      "C:/Users/New Guest/Documents/javafx-sdk-21.0.7/lib/javafx.controls.jar",
+      "C:/Users/New Guest/Documents/javafx-sdk-21.0.7/lib/javafx.fxml.jar",
+      "C:/Users/New Guest/Documents/javafx-sdk-21.0.7/lib/javafx.graphics.jar",
+      "C:/Users/New Guest/Documents/javafx-sdk-21.0.7/lib/javafx.base.jar"
+    ],
+  
+    "java.configuration.runtimes": [
+      {
+        "name": "JavaSE-21",
+        "path": "C:/Program Files/Eclipse Adoptium/jdk-21.0.7.6-hotspot",
+        "default": true
+      }
+    ]
+  }
+  
